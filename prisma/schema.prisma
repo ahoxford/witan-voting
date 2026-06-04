@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DebateRoom {
+  id        String     @id @default(cuid())
+  title     String
+  question  String
+  status    RoomStatus @default(WAITING)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  options      VoteOption[]
+  participants ParticipantSession[]
+  votes        Vote[]
+  snapshots    VoteSnapshot[]
+}
+
+enum RoomStatus {
+  WAITING
+  PRE_VOTE
+  LIVE_VOTE
+  POST_VOTE
+  CLOSED
+}
+
+model VoteOption {
+  id     String @id @default(cuid())
+  label  String
+  order  Int    @default(0)
+  roomId String
+
+  room  DebateRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  votes Vote[]
+
+  @@index([roomId])
+}
+
+model ParticipantSession {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  roomId    String
+  joinedAt  DateTime @default(now())
+
+  room  DebateRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  votes Vote[]
+
+  @@index([roomId])
+  @@index([sessionId])
+}
+
+enum VotePhase {
+  PRE
+  LIVE
+  FINAL
+}
+
+model Vote {
+  id            String    @id @default(cuid())
+  participantId String
+  roomId        String
+  optionId      String
+  phase         VotePhase
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  participant ParticipantSession @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  room        DebateRoom         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  option      VoteOption         @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, phase])
+  @@index([roomId, phase])
+}
+
+model VoteSnapshot {
+  id      String    @id @default(cuid())
+  roomId  String
+  phase   VotePhase
+  data    Json
+  takenAt DateTime  @default(now())
+
+  room DebateRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, phase])
+}
+

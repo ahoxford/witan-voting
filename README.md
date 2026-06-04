@@ -1,8 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Oxford Debate Live Voting App
 
-## Getting Started
+Real-time anonymous voting app for Oxford-style conference debates. Supports pre-debate, live, and final vote phases with a projected public screen.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript
+- **Tailwind CSS** for styling
+- **Socket.IO** for real-time updates (custom server)
+- **PostgreSQL** + **Prisma** ORM
+- **QRCode** for participant join QR codes
+
+## Setup
+
+### 1. Prerequisites
+
+- Node.js 18+
+- PostgreSQL running locally (or a hosted instance)
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env with your database connection string
+```
+
+### 4. Run database migrations
+
+```bash
+npm run db:migrate
+# Enter a migration name e.g. "init"
+```
+
+### 5. (Optional) Seed demo data
+
+```bash
+npm run db:seed
+```
+
+### 6. Start development server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) — redirects to `/admin`.
+
+## Pages
+
+| URL | Purpose |
+|-----|---------|
+| `/admin` | Organizer dashboard — create and control debate rooms |
+| `/vote/[roomId]` | Mobile participant voting page (share via QR code) |
+| `/screen/[roomId]` | Public projector display with live aggregate results |
+| `/results/[roomId]` | Read-only results summary across all phases |
+
+## Voting Flow
+
+1. **Organizer** creates a room at `/admin`, generates QR code
+2. **Participants** scan QR → land on `/vote/[roomId]`
+3. **Organizer** advances through phases: Pre-Debate → Live → Final → Closed
+4. **Screen** at `/screen/[roomId]` shows live aggregate results
+5. Results can be exported as JSON or CSV from the admin panel
+
+## Deployment
+
+For a simple event setup, deploy to [Railway](https://railway.app) or [Render](https://render.com) with a managed PostgreSQL add-on. Set `NEXT_PUBLIC_APP_URL` to your deployment URL so QR codes point to the right place.
+
+```bash
+npm run build
+npm start
+```
 
 ```bash
 npm run dev
