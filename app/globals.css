@@ -1,26 +1,131 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   Oxford Union "order paper" system
+   White paper ground, Oxford blue ink, letterpress detailing.
+   ============================================================ */
+
+@theme {
+  /* Ink — Oxford Blue is the primary and dominant colour */
+  --color-ink: #002147;
+  --color-ink-deep: #001630;
+  --color-ink-mid: #2d4a6b;
+  --color-ink-soft: #5c738f;
+  --color-ink-faint: #93a3b6;
+
+  /* Paper */
+  --color-paper: #ffffff;
+  --color-paper-warm: #faf8f3;
+  --color-paper-sunk: #f2eee5;
+
+  /* Hairline rules, as on a printed order paper */
+  --color-rule: #ddd6c8;
+  --color-rule-soft: #ebe6da;
+
+  /* Categorical ink palette for vote options — muted, letterpress */
+  --color-ox-blue: #002147;
+  --color-claret: #7c2128;
+  --color-brass: #a67c3d;
+  --color-verdigris: #14564f;
+  --color-plum: #4a2c4d;
+
+  /* Accent reserved for the leading option */
+  --color-gold: #9c7434;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-libre-franklin);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-libre-franklin), Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Faint paper grain — adds tooth to the white ground */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Typographic utilities ------------------------------------------ */
+
+/* Tracked small caps — used for every label on the order paper */
+.label-caps {
+  font-family: var(--font-libre-franklin), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
+.label-caps-sm {
+  font-family: var(--font-libre-franklin), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  font-size: 0.5625rem;
+  line-height: 1;
+}
+
+/* Display serif with Fraunces' old-style "wonk" enabled */
+.display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variation-settings: "SOFT" 0, "WONK" 1, "opsz" 40;
+  letter-spacing: -0.015em;
+}
+
+/* Figures: large, confident, tabular so bars don't jitter as votes land */
+.figure {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variation-settings: "SOFT" 0, "WONK" 0, "opsz" 60;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* Double rule, as printed above a motion */
+.rule-double {
+  border-top: 3px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-ink);
+  height: 5px;
+}
+
+/* Subtle letterpress tooth inside a filled bar */
+.bar-ink {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.07) 0px,
+    rgba(255, 255, 255, 0.07) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+/* Slow, dignified pulse for "voting is open" — not a nightclub blink */
+@keyframes ox-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.breathe {
+  animation: ox-breathe 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathe { animation: none; }
+  * { transition-duration: 0.01ms !important; }
 }
