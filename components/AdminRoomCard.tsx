@@ -5,26 +5,18 @@ import QRCode from "qrcode";
 import type { Room } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
-  WAITING: "Waiting",
-  PRE_VOTE: "Pre-debate Vote",
-  LIVE_VOTE: "Live Debate Vote",
-  POST_VOTE: "Final Vote",
+  WAITING: "Not yet sitting",
+  PRE_VOTE: "Division I · Before",
+  LIVE_VOTE: "Division II · During",
+  POST_VOTE: "Division III · Final",
   CLOSED: "Closed",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  WAITING: "bg-gray-700 text-gray-300",
-  PRE_VOTE: "bg-blue-900 text-blue-300",
-  LIVE_VOTE: "bg-green-900 text-green-300",
-  POST_VOTE: "bg-yellow-900 text-yellow-300",
-  CLOSED: "bg-red-900 text-red-300",
-};
-
 const NEXT_ACTION: Record<string, string> = {
-  WAITING: "Open Pre-Debate Vote",
-  PRE_VOTE: "Start Live Debate",
-  LIVE_VOTE: "Open Final Vote",
-  POST_VOTE: "Close & Lock Results",
+  WAITING: "Open First Division",
+  PRE_VOTE: "Begin the Debate",
+  LIVE_VOTE: "Call Final Division",
+  POST_VOTE: "Close & Lock",
   CLOSED: "",
 };
 
@@ -46,7 +38,8 @@ export default function AdminRoomCard({
   const resultsUrl = `${appUrl}/results/${room.id}`;
 
   useEffect(() => {
-    QRCode.toDataURL(voteUrl, { width: 200, margin: 1 }).then(setQrDataUrl);
+    QRCode.toDataURL(voteUrl, { width: 200, margin: 0, color: { dark: "#002147", light: "#ffffff" } })
+      .then(setQrDataUrl);
   }, [voteUrl]);
 
   const advance = async () => {
@@ -62,7 +55,7 @@ export default function AdminRoomCard({
   };
 
   const reset = async () => {
-    if (!confirm("Reset this room? All votes will be deleted.")) return;
+    if (!confirm("Reset this debate? Every vote will be permanently deleted.")) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/rooms/${room.id}/reset`, { method: "POST" });
@@ -78,88 +71,101 @@ export default function AdminRoomCard({
     window.open(`/api/rooms/${room.id}/export?format=${format}`, "_blank");
   };
 
+  const isOpen = ["PRE_VOTE", "LIVE_VOTE", "POST_VOTE"].includes(room.status);
+
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg font-semibold truncate">{room.title}</h3>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[room.status]}`}>
-              {STATUS_LABELS[room.status]}
-            </span>
-          </div>
-          <p className="text-gray-400 text-sm mt-1">{room.question}</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {room.options.map((opt) => (
-              <span key={opt.id} className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded">
-                {opt.label}
+    <article className="border border-rule bg-paper">
+      <div className="border-l-2 border-ink px-5 py-5">
+        <div className="flex items-start justify-between gap-5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              {isOpen && <span className="w-1.5 h-1.5 rounded-full bg-ink breathe" />}
+              <span className={`label-caps-sm ${isOpen ? "text-ink" : "text-ink-faint"}`}>
+                {STATUS_LABELS[room.status]}
               </span>
-            ))}
+            </div>
+
+            <h3 className="display text-xl font-semibold leading-snug truncate">{room.title}</h3>
+            <p className="text-sm text-ink-soft mt-1.5 leading-relaxed">{room.question}</p>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+              {room.options.map((opt) => (
+                <span key={opt.id} className="label-caps-sm text-ink-faint">
+                  {opt.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 shrink-0 w-44">
+            {room.status !== "CLOSED" && (
+              <button
+                onClick={advance}
+                disabled={loading}
+                className="label-caps bg-ink text-paper px-4 py-2.5 hover:bg-ink-deep disabled:opacity-40 transition-colors text-center"
+              >
+                {loading ? "…" : NEXT_ACTION[room.status]}
+              </button>
+            )}
+            <button
+              onClick={() => setShowQR((v) => !v)}
+              className="label-caps border border-rule text-ink-soft hover:border-ink hover:text-ink px-4 py-2.5 transition-colors"
+            >
+              {showQR ? "Hide Links" : "Show Links"}
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 shrink-0">
-          {room.status !== "CLOSED" && (
-            <button
-              onClick={advance}
-              disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-            >
-              {loading ? "…" : NEXT_ACTION[room.status]}
-            </button>
-          )}
-          <button
-            onClick={() => setShowQR((v) => !v)}
-            className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
-          >
-            {showQR ? "Hide QR" : "Show QR"}
-          </button>
-        </div>
+        {showQR && (
+          <div className="mt-5 pt-5 border-t border-rule flex flex-col sm:flex-row gap-6 items-start">
+            <div className="border border-ink p-2.5 shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {qrDataUrl && <img src={qrDataUrl} alt="Scan to vote" width={150} height={150} />}
+            </div>
+            <div className="space-y-3 min-w-0">
+              {[
+                { label: "Ballot (attendees)", url: voteUrl },
+                { label: "Chamber screen", url: screenUrl },
+                { label: "Record of division", url: resultsUrl },
+              ].map(({ label, url }) => (
+                <div key={label}>
+                  <p className="label-caps-sm text-ink-faint mb-1">{label}</p>
+                  <a
+                    href={url}
+                    target="_blank"
+                    className="text-sm text-ink underline decoration-rule underline-offset-4 hover:decoration-ink break-all"
+                  >
+                    {url}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {showQR && (
-        <div className="mt-4 border-t border-gray-700 pt-4 flex flex-col sm:flex-row gap-6 items-start">
-          <div className="bg-white p-2 rounded-lg">
-            {qrDataUrl && <img src={qrDataUrl} alt="QR Code" width={160} height={160} />}
-          </div>
-          <div className="text-sm space-y-2 text-gray-400">
-            <div>
-              <span className="text-gray-500 block text-xs uppercase tracking-wider mb-0.5">Vote URL</span>
-              <a href={voteUrl} target="_blank" className="text-indigo-400 break-all hover:underline">{voteUrl}</a>
-            </div>
-            <div>
-              <span className="text-gray-500 block text-xs uppercase tracking-wider mb-0.5">Public Screen</span>
-              <a href={screenUrl} target="_blank" className="text-indigo-400 break-all hover:underline">{screenUrl}</a>
-            </div>
-            <div>
-              <span className="text-gray-500 block text-xs uppercase tracking-wider mb-0.5">Results</span>
-              <a href={resultsUrl} target="_blank" className="text-indigo-400 break-all hover:underline">{resultsUrl}</a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4 flex gap-2 flex-wrap border-t border-gray-800 pt-4">
+      <div className="flex gap-2 flex-wrap border-t border-rule px-5 py-3 bg-paper-warm">
         <button
           onClick={() => exportData("json")}
-          className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1 rounded transition-colors"
+          className="label-caps-sm text-ink-soft hover:text-ink transition-colors"
         >
           Export JSON
         </button>
+        <span className="text-rule">·</span>
         <button
           onClick={() => exportData("csv")}
-          className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1 rounded transition-colors"
+          className="label-caps-sm text-ink-soft hover:text-ink transition-colors"
         >
           Export CSV
         </button>
         <button
           onClick={reset}
           disabled={loading}
-          className="text-xs text-red-500 hover:text-red-400 border border-red-900 hover:border-red-700 px-3 py-1 rounded transition-colors ml-auto"
+          className="label-caps-sm text-claret hover:underline underline-offset-4 ml-auto disabled:opacity-40"
         >
-          Reset Room
+          Reset Debate
         </button>
       </div>
-    </div>
+    </article>
   );
 }
