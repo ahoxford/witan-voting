@@ -17,7 +17,7 @@ const libreFranklin = Libre_Franklin({
 
 export const metadata: Metadata = {
   title: "Oxford Debate Live Voting",
-  description: "Live anonymous voting for Oxford-style debates",
+  description: "Live anonymous voting for Witan 50",
 };
 
 export default function RootLayout({
